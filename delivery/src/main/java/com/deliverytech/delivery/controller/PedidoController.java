@@ -1,67 +1,63 @@
 package com.deliverytech.delivery.controller;
 
-import com.deliverytech.delivery.entity.Pedido;
+import com.deliverytech.delivery.dto.PedidoDTO;
+import com.deliverytech.delivery.dto.PedidoResponseDTO;
+import com.deliverytech.delivery.dto.ItemPedidoDTO;
+import com.deliverytech.delivery.dto.StatusPedidoDTO;
 import com.deliverytech.delivery.service.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
+import jakarta.validation.Valid;
+
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/pedidos")
+@RequestMapping("/api/pedidos")
+@CrossOrigin(origins = "*")
 public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
 
-    // GET /pedidos
-    @GetMapping
-    public ResponseEntity<List<Pedido>> getAll() {
-        List<Pedido> lista = pedidoService.findAll();
-        return ResponseEntity.ok(lista);
-    }
-
-    // GET /pedidos/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<Pedido> getById(@PathVariable Long id) {
-        Optional<Pedido> opt = pedidoService.findById(id);
-        return opt.map(ResponseEntity::ok)
-                  .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST /pedidos
     @PostMapping
-    public ResponseEntity<Pedido> create(@RequestBody Pedido pedido) {
-        Pedido salvo = pedidoService.save(pedido);
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(salvo.getId())
-                .toUri();
-        return ResponseEntity.created(uri).body(salvo);
+    public ResponseEntity<PedidoResponseDTO> criarPedido(@Valid @RequestBody PedidoDTO dto) {
+        PedidoResponseDTO pedido = pedidoService.criarPedido(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
     }
 
-    // PUT /pedidos/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<Pedido> update(@PathVariable Long id, @RequestBody Pedido pedido) {
-        Pedido atualizado = pedidoService.update(id, pedido);
-        if (atualizado == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(atualizado);
+    @GetMapping("/{id}")
+    public ResponseEntity<PedidoResponseDTO> buscarPorId(@PathVariable Long id) {
+        PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
+        return ResponseEntity.ok(pedido);
     }
 
-    // DELETE /pedidos/{id}
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<PedidoResponseDTO>> buscarPorCliente(@PathVariable Long clienteId) {
+        List<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId);
+        return ResponseEntity.ok(pedidos);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<PedidoResponseDTO> atualizarStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody StatusPedidoDTO statusDTO) {
+        PedidoResponseDTO pedido = pedidoService.atualizarStatusPedido(id, statusDTO.getStatus());
+        return ResponseEntity.ok(pedido);
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        Optional<Pedido> existente = pedidoService.findById(id);
-        if (existente.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        pedidoService.delete(id);
+    public ResponseEntity<Void> cancelarPedido(@PathVariable Long id) {
+        pedidoService.cancelarPedido(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/calcular")
+    public ResponseEntity<BigDecimal> calcularTotal(@Valid @RequestBody List<ItemPedidoDTO> itens) {
+        BigDecimal total = pedidoService.calcularTotalPedido(itens);
+        return ResponseEntity.ok(total);
     }
 }
