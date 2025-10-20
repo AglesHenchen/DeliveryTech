@@ -1,5 +1,6 @@
 package com.deliverytech.delivery.controller;
 
+import com.deliverytech.delivery.entity.Produto;
 import com.deliverytech.delivery.entity.Restaurante;
 import com.deliverytech.delivery.service.RestauranteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,5 +64,14 @@ public class RestauranteController {
         }
         restauranteService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/produtos")
+    public ResponseEntity<List<Produto>> listarProdutosPorRestaurante(@PathVariable Long id) {
+        List<Produto> produtos = restauranteService.buscarProdutosPorRestaurante(id); // Chama o serviço para buscar os produtos
+        if (produtos.isEmpty()) {
+            return ResponseEntity.notFound().build(); // Retorna 404 se não houver produtos
+        }
+        return ResponseEntity.ok(produtos); // Retorna os produtos encontrados
     }
 }

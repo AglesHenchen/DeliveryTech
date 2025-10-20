@@ -1,6 +1,8 @@
 package com.deliverytech.delivery.service;
 
+import com.deliverytech.delivery.entity.Produto;
 import com.deliverytech.delivery.entity.Restaurante;
+import com.deliverytech.delivery.repository.ProdutoRepository;
 import com.deliverytech.delivery.repository.RestauranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,9 @@ public class RestauranteService {
 
     @Autowired
     private RestauranteRepository restauranteRepository;
+
+    @Autowired
+    private ProdutoRepository produtoRepository;
 
     public List<Restaurante> findAll() {
         return restauranteRepository.findAll();
@@ -44,5 +49,9 @@ public class RestauranteService {
 
     public void delete(Long id) {
         restauranteRepository.deleteById(id);
+    }
+
+    public List<Produto> buscarProdutosPorRestaurante(Long restauranteId) {
+        return produtoRepository.findByRestauranteId(restauranteId); // Consulta os produtos pelo restaurante
     }
 }
