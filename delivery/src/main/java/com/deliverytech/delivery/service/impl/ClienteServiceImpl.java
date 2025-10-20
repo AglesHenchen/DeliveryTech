@@ -46,7 +46,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarClientePorId(Long id) {
         Cliente cliente = clienteRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
         return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
@@ -55,7 +55,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarClientePorEmail(String email) {
         Cliente cliente = clienteRepository.findByEmail(email)
-            .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com email: " + email));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com email: " + email));
 
         return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
@@ -63,11 +63,11 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     public ClienteResponseDTO atualizarCliente(Long id, ClienteDTO dto) {
         Cliente cliente = clienteRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
         // Validar email único (se mudou)
         if (!cliente.getEmail().equals(dto.getEmail()) &&
-            clienteRepository.existsByEmail(dto.getEmail())) {
+                clienteRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessException("Email já cadastrado: " + dto.getEmail());
         }
 
@@ -84,7 +84,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     public ClienteResponseDTO ativarDesativarCliente(Long id) {
         Cliente cliente = clienteRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
         cliente.setAtivo(!cliente.isAtivo());
         Cliente clienteAtualizado = clienteRepository.save(cliente);
@@ -98,7 +98,7 @@ public class ClienteServiceImpl implements ClienteService {
         List<Cliente> clientesAtivos = clienteRepository.findByAtivoTrue();
 
         return clientesAtivos.stream()
-            .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class))
-            .collect(Collectors.toList());
+                .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class))
+                .collect(Collectors.toList());
     }
 }

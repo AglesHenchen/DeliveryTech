@@ -1,4 +1,4 @@
-package com.deliverytech.delivery.service;
+package com.deliverytech.delivery;
 
 import com.deliverytech.delivery.dto.ClienteDTO;
 import com.deliverytech.delivery.dto.ClienteResponseDTO;

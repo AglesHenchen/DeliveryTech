@@ -3,6 +3,7 @@ package com.deliverytech.delivery.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.deliverytech.delivery.enums.StatusPedido;
@@ -36,7 +37,7 @@ public class Pedido {
     private BigDecimal valorTotal;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ItemPedido> itens;
+    private List<ItemPedido> itens = new ArrayList<>();
 
     // Getters e Setters
 

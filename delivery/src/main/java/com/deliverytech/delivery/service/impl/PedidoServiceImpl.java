@@ -64,7 +64,8 @@ public class PedidoServiceImpl implements PedidoService {
 
         for (ItemPedidoDTO itemDTO : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + itemDTO.getProdutoId()));
+                    .orElseThrow(
+                            () -> new EntityNotFoundException("Produto não encontrado: " + itemDTO.getProdutoId()));
 
             if (!produto.isDisponivel()) {
                 throw new BusinessException("Produto indisponível: " + produto.getNome());
@@ -197,4 +198,30 @@ public class PedidoServiceImpl implements PedidoService {
     private boolean podeSerCancelado(StatusPedido status) {
         return status == StatusPedido.PENDENTE || status == StatusPedido.CONFIRMADO;
     }
+
+    @Override
+    public PedidoResponseDTO atualizarStatusPedido(Long id, String status) {
+        // Verificar se o status fornecido é válido
+        StatusPedido statusPedido;
+        try {
+            statusPedido = StatusPedido.valueOf(status); // Conversão do String para o enum StatusPedido
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Status inválido: " + status);
+        }
+
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
+
+        // Validar transições de status permitidas
+        if (!isTransicaoValida(pedido.getStatus(), statusPedido)) {
+            throw new BusinessException("Transição de status inválida: " +
+                    pedido.getStatus() + " -> " + statusPedido);
+        }
+
+        pedido.setStatus(statusPedido);
+        Pedido pedidoAtualizado = pedidoRepository.save(pedido);
+
+        return modelMapper.map(pedidoAtualizado, PedidoResponseDTO.class);
+    }
+
 }

@@ -19,6 +19,8 @@ public class Produto {
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;
 
+    private Boolean disponivel;  // Exemplo de campo de disponibilidade
+
     // Getters e Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -34,4 +36,14 @@ public class Produto {
 
     public String getCategoria() { return categoria; }
     public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    // Método isDisponivel() para verificar disponibilidade
+    public boolean isDisponivel() {
+        return Boolean.TRUE.equals(disponivel);  // Protege contra valor nulo
+    }
+
+    public void setDisponivel(Boolean disponivel) {
+    this.disponivel = disponivel;
+}
+
 }

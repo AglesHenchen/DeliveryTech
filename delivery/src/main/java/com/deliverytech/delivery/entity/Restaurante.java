@@ -39,4 +39,9 @@ public class Restaurante {
 
     public Boolean getAtivo() { return ativo; }
     public void setAtivo(Boolean ativo) { this.ativo = ativo; }
+
+    // Método isAtivo() para facilitar a verificação
+    public boolean isAtivo() {
+        return Boolean.TRUE.equals(ativo);  // Protege contra valor nulo
+    }
 }
