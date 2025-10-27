@@ -1,6 +1,7 @@
 package com.deliverytech.delivery.config;
 
 import com.deliverytech.delivery.entity.*;
+import com.deliverytech.delivery.enums.StatusPedido;
 import com.deliverytech.delivery.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -152,6 +153,7 @@ public class DataLoader implements CommandLineRunner {
     pedido1.setCliente(savedCliente1);
     pedido1.setRestaurante(savedRestaurante1);
     pedido1.setDataPedido(LocalDateTime.now()); // Usando dataPedido
+    pedido1.setStatus(StatusPedido.PENDENTE); // Definindo o status do pedido como PENDENTE
 
     // Criando o ItemPedido para o primeiro pedido
     ItemPedido itemPedido1 = new ItemPedido();
@@ -179,6 +181,7 @@ public class DataLoader implements CommandLineRunner {
     pedido2.setCliente(savedCliente2);
     pedido2.setRestaurante(savedRestaurante2);
     pedido2.setDataPedido(LocalDateTime.now()); // Usando dataPedido
+    pedido2.setStatus(StatusPedido.PENDENTE); // Definindo o status do pedido como PENDENTE
 
     // Criando o ItemPedido para o segundo pedido
     ItemPedido itemPedido2 = new ItemPedido();
@@ -225,15 +228,5 @@ public class DataLoader implements CommandLineRunner {
         boolean emailExiste = clienteRepository.existsByEmail("maria@email.com");
         System.out.println("Email maria@email.com existe: " + emailExiste);
 
-        // Teste RestauranteRepository
-        System.out.println("\n--- Testes RestauranteRepository ---");
-        var restaurantePorNome = restauranteRepository.findByNome("Pizza Express");
-        System.out.println("Restaurante Pizza Express: " +
-                (!restaurantePorNome.isEmpty() ? restaurantePorNome.get(0).getNome() : "Não encontrado"));
-
-        var restaurantesCategoria = restauranteRepository.findByCategoria("Fast Food");
-        System.out.println("Restaurantes de categoria 'Fast Food': " + restaurantesCategoria.size());
-
-        // ... você pode continuar com mais testes conforme necessário
     }
 }

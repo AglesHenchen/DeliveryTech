@@ -10,11 +10,15 @@ import java.util.List;
 
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
+
     // Produtos por restaurante
     List<Produto> findByRestauranteId(Long restauranteId);
 
     // Produtos por categoria
     List<Produto> findByCategoria(String categoria);
+
+    // Busca por nome (contendo, case-insensitive)
+    List<Produto> findByNomeContainingIgnoreCase(String nome);
 
     // Por faixa de preço (menor ou igual)
     List<Produto> findByPrecoLessThanEqual(BigDecimal preco);
@@ -27,5 +31,4 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
             "ORDER BY quantidade_vendida DESC " +
             "LIMIT 5", nativeQuery = true)
     List<Object[]> produtosMaisVendidos();
-
 }

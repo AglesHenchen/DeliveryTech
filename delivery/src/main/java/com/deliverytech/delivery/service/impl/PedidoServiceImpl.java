@@ -11,10 +11,13 @@ import com.deliverytech.delivery.repository.*;
 import com.deliverytech.delivery.service.PedidoService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +45,6 @@ public class PedidoServiceImpl implements PedidoService {
     @Override
     @Transactional
     public PedidoResponseDTO criarPedido(PedidoDTO dto) {
-        // 1. Validar se o cliente existe e está ativo
         Cliente cliente = clienteRepository.findById(dto.getClienteId())
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
 
@@ -50,7 +52,6 @@ public class PedidoServiceImpl implements PedidoService {
             throw new BusinessException("Cliente inativo não pode fazer pedidos");
         }
 
-        // 2. Validar se o restaurante existe e está ativo
         Restaurante restaurante = restauranteRepository.findById(dto.getRestauranteId())
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado"));
 
@@ -58,14 +59,12 @@ public class PedidoServiceImpl implements PedidoService {
             throw new BusinessException("Restaurante não está disponível");
         }
 
-        // 3. Validar produtos e criar itens do pedido
         List<ItemPedido> itensPedido = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
 
         for (ItemPedidoDTO itemDTO : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-                    .orElseThrow(
-                            () -> new EntityNotFoundException("Produto não encontrado: " + itemDTO.getProdutoId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + itemDTO.getProdutoId()));
 
             if (!produto.isDisponivel()) {
                 throw new BusinessException("Produto indisponível: " + produto.getNome());
@@ -85,11 +84,9 @@ public class PedidoServiceImpl implements PedidoService {
             subtotal = subtotal.add(item.getSubtotal());
         }
 
-        // 4. Calcular total do pedido
         BigDecimal taxaEntrega = restaurante.getTaxaEntrega();
         BigDecimal valorTotal = subtotal.add(taxaEntrega);
 
-        // 5. Criar e salvar pedido
         Pedido pedido = new Pedido();
         pedido.setCliente(cliente);
         pedido.setRestaurante(restaurante);
@@ -102,15 +99,11 @@ public class PedidoServiceImpl implements PedidoService {
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        // 6. Associar e salvar itens do pedido
         for (ItemPedido item : itensPedido) {
             item.setPedido(pedidoSalvo);
         }
         pedidoSalvo.setItens(itensPedido);
 
-        // 7. (Opcional) Atualizar estoque
-
-        // 8. Retornar DTO de resposta
         return modelMapper.map(pedidoSalvo, PedidoResponseDTO.class);
     }
 
@@ -134,17 +127,49 @@ public class PedidoServiceImpl implements PedidoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, StatusPedido status) {
+        List<Pedido> pedidos = pedidoRepository.findByRestauranteIdAndStatus(restauranteId, status);
+
+        return pedidos.stream()
+                .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido novoStatus) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
 
-        // Validar transições de status permitidas
         if (!isTransicaoValida(pedido.getStatus(), novoStatus)) {
             throw new BusinessException("Transição de status inválida: " +
                     pedido.getStatus() + " -> " + novoStatus);
         }
 
         pedido.setStatus(novoStatus);
+        Pedido pedidoAtualizado = pedidoRepository.save(pedido);
+
+        return modelMapper.map(pedidoAtualizado, PedidoResponseDTO.class);
+    }
+
+    @Override
+    public PedidoResponseDTO atualizarStatusPedido(Long id, String status) {
+        StatusPedido statusPedido;
+        try {
+            statusPedido = StatusPedido.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Status inválido: " + status);
+        }
+
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
+
+        if (!isTransicaoValida(pedido.getStatus(), statusPedido)) {
+            throw new BusinessException("Transição de status inválida: " +
+                    pedido.getStatus() + " -> " + statusPedido);
+        }
+
+        pedido.setStatus(statusPedido);
         Pedido pedidoAtualizado = pedidoRepository.save(pedido);
 
         return modelMapper.map(pedidoAtualizado, PedidoResponseDTO.class);
@@ -159,9 +184,7 @@ public class PedidoServiceImpl implements PedidoService {
             Produto produto = produtoRepository.findById(item.getProdutoId())
                     .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
 
-            BigDecimal subtotalItem = produto.getPreco()
-                    .multiply(BigDecimal.valueOf(item.getQuantidade()));
-            total = total.add(subtotalItem);
+            total = total.add(produto.getPreco().multiply(BigDecimal.valueOf(item.getQuantidade())));
         }
 
         return total;
@@ -178,6 +201,17 @@ public class PedidoServiceImpl implements PedidoService {
 
         pedido.setStatus(StatusPedido.CANCELADO);
         pedidoRepository.save(pedido);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PedidoResponseDTO> listarPedidos(StatusPedido status, LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim.atTime(23, 59, 59);
+
+        Page<Pedido> pedidosPage = pedidoRepository.findByStatusAndDataPedidoBetween(status, inicio, fim, pageable);
+
+        return pedidosPage.map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class));
     }
 
     private boolean isTransicaoValida(StatusPedido statusAtual, StatusPedido novoStatus) {
@@ -198,30 +232,4 @@ public class PedidoServiceImpl implements PedidoService {
     private boolean podeSerCancelado(StatusPedido status) {
         return status == StatusPedido.PENDENTE || status == StatusPedido.CONFIRMADO;
     }
-
-    @Override
-    public PedidoResponseDTO atualizarStatusPedido(Long id, String status) {
-        // Verificar se o status fornecido é válido
-        StatusPedido statusPedido;
-        try {
-            statusPedido = StatusPedido.valueOf(status); // Conversão do String para o enum StatusPedido
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException("Status inválido: " + status);
-        }
-
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
-
-        // Validar transições de status permitidas
-        if (!isTransicaoValida(pedido.getStatus(), statusPedido)) {
-            throw new BusinessException("Transição de status inválida: " +
-                    pedido.getStatus() + " -> " + statusPedido);
-        }
-
-        pedido.setStatus(statusPedido);
-        Pedido pedidoAtualizado = pedidoRepository.save(pedido);
-
-        return modelMapper.map(pedidoAtualizado, PedidoResponseDTO.class);
-    }
-
 }

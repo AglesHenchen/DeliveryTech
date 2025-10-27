@@ -1,7 +1,6 @@
 package com.deliverytech.delivery.entity;
 
 import java.math.BigDecimal;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +16,10 @@ public class Restaurante {
     private String telefone;
     private BigDecimal taxaEntrega;
     private Boolean ativo;
+
+    // Novos campos usados pelos testes
+    private Integer tempoEntrega;
+    private String horarioFuncionamento;
 
     // Getters e Setters
     public Long getId() { return id; }
@@ -40,8 +43,13 @@ public class Restaurante {
     public Boolean getAtivo() { return ativo; }
     public void setAtivo(Boolean ativo) { this.ativo = ativo; }
 
-    // Método isAtivo() para facilitar a verificação
-    public boolean isAtivo() {
-        return Boolean.TRUE.equals(ativo);  // Protege contra valor nulo
-    }
+    // Novos getters/setters
+    public Integer getTempoEntrega() { return tempoEntrega; }
+    public void setTempoEntrega(Integer tempoEntrega) { this.tempoEntrega = tempoEntrega; }
+
+    public String getHorarioFuncionamento() { return horarioFuncionamento; }
+    public void setHorarioFuncionamento(String horarioFuncionamento) { this.horarioFuncionamento = horarioFuncionamento; }
+
+    // Conveniência para evitar NPE
+    public boolean isAtivo() { return Boolean.TRUE.equals(ativo); }
 }
