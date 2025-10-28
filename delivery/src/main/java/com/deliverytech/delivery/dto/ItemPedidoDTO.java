@@ -12,6 +12,20 @@ public class ItemPedidoDTO {
     @Max(value = 10, message = "Quantidade máxima é 10")
     private Integer quantidade;
 
+    @Size(max = 200, message = "Observações não podem exceder 200 caracteres")
+    private String observacoes;
+
+    // Construtor padrão
+    public ItemPedidoDTO() {
+    }
+
+    // Construtor com todos os campos
+    public ItemPedidoDTO(Long produtoId, Integer quantidade, String observacoes) {
+        this.produtoId = produtoId;
+        this.quantidade = quantidade;
+        this.observacoes = observacoes;
+    }
+
     // Getters e Setters
     public Long getProdutoId() {
         return produtoId;
@@ -27,5 +41,13 @@ public class ItemPedidoDTO {
 
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;
+    }
+
+    public String getObservacoes() {
+        return observacoes;
+    }
+
+    public void setObservacoes(String observacoes) {
+        this.observacoes = observacoes;
     }
 }

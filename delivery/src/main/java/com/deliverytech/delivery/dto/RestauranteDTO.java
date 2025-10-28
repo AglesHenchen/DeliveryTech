@@ -2,7 +2,6 @@ package com.deliverytech.delivery.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
 
 @Schema(description = "Dados para cadastro de restaurante")
@@ -54,60 +53,50 @@ public class RestauranteDTO {
     @NotBlank(message = "Horário de funcionamento é obrigatório")
     private String horarioFuncionamento;
 
-    // Getters e Setters
-    public String getNome() {
-        return nome;
-    }
+    @Schema(description = "Email para contato",
+            example = "contato@pizzaexpress.com")
+    @Email(message = "Email deve ter formato válido")
+    private String email;
 
-    public void setNome(String nome) {
+    // Construtor padrão
+    public RestauranteDTO() {}
+
+    // Construtor completo
+    public RestauranteDTO(String nome, String categoria, String endereco, String telefone,
+                          BigDecimal taxaEntrega, Integer tempoEntrega,
+                          String horarioFuncionamento, String email) {
         this.nome = nome;
-    }
-
-    public String getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(String categoria) {
         this.categoria = categoria;
-    }
-
-    public String getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(String endereco) {
         this.endereco = endereco;
-    }
-
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
         this.telefone = telefone;
-    }
-
-    public BigDecimal getTaxaEntrega() {
-        return taxaEntrega;
-    }
-
-    public void setTaxaEntrega(BigDecimal taxaEntrega) {
         this.taxaEntrega = taxaEntrega;
-    }
-
-    public Integer getTempoEntrega() {
-        return tempoEntrega;
-    }
-
-    public void setTempoEntrega(Integer tempoEntrega) {
         this.tempoEntrega = tempoEntrega;
-    }
-
-    public String getHorarioFuncionamento() {
-        return horarioFuncionamento;
-    }
-
-    public void setHorarioFuncionamento(String horarioFuncionamento) {
         this.horarioFuncionamento = horarioFuncionamento;
+        this.email = email;
     }
+
+    // Getters e Setters
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    public String getEndereco() { return endereco; }
+    public void setEndereco(String endereco) { this.endereco = endereco; }
+
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    public BigDecimal getTaxaEntrega() { return taxaEntrega; }
+    public void setTaxaEntrega(BigDecimal taxaEntrega) { this.taxaEntrega = taxaEntrega; }
+
+    public Integer getTempoEntrega() { return tempoEntrega; }
+    public void setTempoEntrega(Integer tempoEntrega) { this.tempoEntrega = tempoEntrega; }
+
+    public String getHorarioFuncionamento() { return horarioFuncionamento; }
+    public void setHorarioFuncionamento(String horarioFuncionamento) { this.horarioFuncionamento = horarioFuncionamento; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

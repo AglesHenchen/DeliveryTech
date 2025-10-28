@@ -1,95 +1,91 @@
 package com.deliverytech.delivery.exception;
 
-import org.springframework.http.HttpHeaders;
+import com.deliverytech.delivery.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.validation.FieldError;
 
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler {
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpHeaders headers,
-            HttpStatusCode status,
-            WebRequest request) {
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(
+            MethodArgumentNotValidException ex, WebRequest request) {
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("success", false);
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
 
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("code", "VALIDATION_ERROR");
-        error.put("timestamp", LocalDateTime.now().toString());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Dados inválidos",
+                "Erro de validação nos dados enviados",
+                request.getDescription(false).replace("uri=", "")
+        );
+        errorResponse.setErrorCode("VALIDATION_ERROR");
+        errorResponse.setDetails(errors);
 
-        Map<String, String> details = new LinkedHashMap<>();
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            details.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
-        error.put("details", details);
-
-        body.put("error", error);
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<Object> handleEntityNotFound(EntityNotFoundException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("success", false);
+    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(
+            EntityNotFoundException ex, WebRequest request) {
 
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("code", "ENTITY_NOT_FOUND");
-        error.put("timestamp", LocalDateTime.now().toString());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Entidade não encontrada",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        errorResponse.setErrorCode(ex.getErrorCode());
 
-        Map<String, Object> details = new LinkedHashMap<>();
-        details.put("message", ex.getMessage());
-        error.put("details", details);
-
-        body.put("error", error);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<Object> handleBusinessException(BusinessException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("success", false);
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(
+            ConflictException ex, WebRequest request) {
 
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("code", "BUSINESS_ERROR");
-        error.put("timestamp", LocalDateTime.now().toString());
+        Map<String, String> details = new HashMap<>();
+        if (ex.getConflictField() != null && ex.getConflictValue() != null) {
+            details.put(ex.getConflictField(), ex.getConflictValue().toString());
+        }
 
-        Map<String, Object> details = new LinkedHashMap<>();
-        details.put("message", ex.getMessage());
-        error.put("details", details);
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflito de dados",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        errorResponse.setErrorCode(ex.getErrorCode());
+        errorResponse.setDetails(details.isEmpty() ? null : details);
 
-        body.put("error", error);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGenericException(Exception ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("success", false);
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception ex, WebRequest request) {
 
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("code", "INTERNAL_ERROR");
-        error.put("timestamp", LocalDateTime.now().toString());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Erro interno do servidor",
+                "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+                request.getDescription(false).replace("uri=", "")
+        );
+        errorResponse.setErrorCode("INTERNAL_ERROR");
 
-        Map<String, Object> details = new LinkedHashMap<>();
-        details.put("message", "Ocorreu um erro inesperado");
-        error.put("details", details);
-
-        body.put("error", error);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
